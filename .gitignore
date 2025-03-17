@@ -131,4 +131,4 @@ dist
 uploads
 
 Dockerfile
-jenkinsfile
+Jenkinsfile*
