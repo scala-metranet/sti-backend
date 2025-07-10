@@ -10,7 +10,7 @@ export class NodeMailerProvier {
         port: 587,
         auth: {
           user: MAILTRAP_USER,
-          pass: :MAILTRAP_PASSWORD,
+          pass: MAILTRAP_PASSWORD,
         },
       });
 
