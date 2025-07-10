@@ -6,11 +6,11 @@ export class NodeMailerProvier {
   async send(param: any) {
     try {
       const transporter = nodemailer.createTransport({
-        host: process.env.NODE_ENV != 'production'?'smtp.ethereal.email':MAILTRAP_HOST,
+        host: MAILTRAP_HOST,
         port: 587,
         auth: {
-          user: process.env.NODE_ENV != 'production'?'brain.thiel@ethereal.email':MAILTRAP_USER,
-          pass: process.env.NODE_ENV != 'production'?'krkFhphMaTjYkQJeSz':MAILTRAP_PASSWORD,
+          user: MAILTRAP_USER,
+          pass: :MAILTRAP_PASSWORD,
         },
       });
 
