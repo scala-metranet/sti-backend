@@ -25,6 +25,7 @@ import ClassesRoute from "./routes/classes.route";
 import GraduationRoute from "./routes/graduation.route";
 import AttendanceRoute from "./routes/attendance.route";
 import MitraRoute from "./routes/mitra.route";
+import ProjectRoute from "./routes/project.route";
 
 validateEnv();
 
@@ -53,7 +54,8 @@ const app = new App([
   new ClassesRoute(),
   new GraduationRoute(),
   new AttendanceRoute(),
-  new MitraRoute()
+  new MitraRoute(),
+  new ProjectRoute()
 ]);
 
 app.listen();

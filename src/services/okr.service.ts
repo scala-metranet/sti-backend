@@ -241,6 +241,26 @@ class OkrService {
   }
 
   public async createSprint(param: any): Promise<any> {
+    // Validate project_id and mentor assignment if project_id is provided
+    if (param.project_id) {
+      const { ModelProject } = require('@/models/project.model');
+      const { ModelProjectMentor } = require('@/models/project_mentor.model');
+      
+      // Check if project exists
+      const project = await ModelProject.query().findById(param.project_id);
+      if (!project) throw new HttpException(409, "Project not found");
+      
+      // Check if current user is assigned as mentor to this project
+      const projectMentor = await ModelProjectMentor.query()
+        .where('project_id', param.project_id)
+        .where('mentor_id', param.user_id)
+        .first();
+      
+      if (!projectMentor) {
+        throw new HttpException(403, "Only assigned mentors can create sprints for this project");
+      }
+    }
+
     const sprintMaster:any = await ModelSprintMaster.query().where('id',param.sprint_master_id).first();
     if (!sprintMaster) throw new HttpException(409, "Data failed to input");
     //get sprint master name
@@ -260,7 +280,8 @@ class OkrService {
       end_date: param.end_date,
       user_id: param.user_id,
       sprint_master_id: param.sprint_master_id,
-      user_internship_id: param.user_internship_id
+      user_internship_id: param.user_internship_id,
+      project_id: param.project_id
     };
     const createData: any = await ModelSprint.query()
       .insert({ id: generateId(), ...paramSprint })

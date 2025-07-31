@@ -15,6 +15,7 @@ export class ModelSprint extends softDelete(Model) implements Sprint {
   objective!: string;
   squad_leader_id!: string;
   squad_id!: string;
+  project_id?: string;
   start_date!: string;
   end_date!: string;
   mentor_notes!: string;
@@ -38,6 +39,14 @@ export class ModelSprint extends softDelete(Model) implements Sprint {
       join: {
         from: 'sprint.squad_id',
         to: 'squad.id'
+      }
+    },
+    project: {
+      relation: Model.BelongsToOneRelation,
+      modelClass: __dirname + '/project.model',
+      join: {
+        from: 'sprint.project_id',
+        to: 'project.id'
       }
     },
     okr: {

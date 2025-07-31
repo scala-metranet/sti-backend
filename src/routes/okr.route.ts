@@ -2,6 +2,7 @@ import { Router } from "express";
 import { Routes } from "@interfaces/routes.interface";
 import { BASE_PATH } from "@config";
 import authMiddleware from "@middlewares/auth.middleware";
+import projectMentorGuardMiddleware from "@middlewares/project-mentor.middleware";
 import OkrController from "@/controllers/okr.controller";
 import multer from "multer";
 const upload = multer({ dest: "uploads/" });
@@ -25,7 +26,7 @@ class OkrRoute implements Routes {
     this.router.get(`${this.path}/sprint/activity/:id(\\w+)`, authMiddleware, this.controller.getSprintActivity);
     this.router.get(`${this.path}/sprint/mentee/assign/:id(\\w+)`, authMiddleware, this.controller.getSprintAssign);
     this.router.get(`${this.path}/sprint/mentee/:id(\\w+)`, authMiddleware, this.controller.getSprint);
-    this.router.post(`${this.path}/sprint`, authMiddleware, this.controller.createSprint);
+    this.router.post(`${this.path}/sprint`, authMiddleware, projectMentorGuardMiddleware, this.controller.createSprint);
     this.router.post(`${this.path}/sprint/okr`, authMiddleware, this.controller.createSprintKr);
     this.router.put(`${this.path}/sprint/:id(\\w+)`, authMiddleware, this.controller.updateSprint);
     this.router.delete(`${this.path}/sprint/:id(\\w+)`, authMiddleware, this.controller.deleteSprint);
