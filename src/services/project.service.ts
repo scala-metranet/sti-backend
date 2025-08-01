@@ -7,47 +7,12 @@ import { ModelProjectMentor } from "@/models/project_mentor.model";
 
 class ProjectService {
   public async findAll(companyId: string): Promise<Project[]> {
-    // let data: any = await ModelProject.query()
-    //   .select()
-    //   .from(ModelProject.tableName)
-    //   .where("company_id", "=", companyId)
-    //   .withGraphFetched("[company, mentors]");
+    let data: any = await ModelProject.query()
+      .select()
+      .from(ModelProject.tableName)
+      .where("company_id", "=", companyId)
+      .withGraphFetched("[company, mentors]");
     
-    let data = [
-		{
-			id: "123e4567-e89b-12d3-a456-426614174000",
-			name: "Project Alpha",
-			description: "A comprehensive web application for managing company resources and workflows",
-			start_date: "2024-01-15T00:00:00.000Z",
-			end_date: "2024-12-31T00:00:00.000Z",
-			company_id: "123e4567-e89b-12d3-a456-426614174000",
-			created_at: "2024-01-01T00:00:00.000Z",
-			updated_at: "2024-01-01T00:00:00.000Z",
-			deleted_at: null
-		},
-		{
-			id: "234e5678-e89b-12d3-a456-426614174001",
-			name: "Project Beta",
-			description: "Mobile application development for customer engagement and support",
-			start_date: "2024-02-01T00:00:00.000Z",
-			end_date: "2024-08-30T00:00:00.000Z",
-			company_id: "123e4567-e89b-12d3-a456-426614174000",
-			created_at: "2024-01-15T00:00:00.000Z",
-			updated_at: "2024-01-15T00:00:00.000Z",
-			deleted_at: null
-		},
-		{
-			id: "345e6789-e89b-12d3-a456-426614174003",
-			name: "Project Gamma",
-			description: "Data analytics platform for business intelligence and reporting",
-			start_date: "2024-03-01T00:00:00.000Z",
-			end_date: "2024-11-15T00:00:00.000Z",
-			company_id: "123e4567-e89b-12d3-a456-426614174000",
-			created_at: "2024-02-01T00:00:00.000Z",
-			updated_at: "2024-02-01T00:00:00.000Z",
-			deleted_at: null
-		}
-	];
     return data;
   }
 
