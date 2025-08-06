@@ -131,7 +131,7 @@ class AuthService {
 				id: generateId(),
 				role_id: findRole.id,
 				password: await hash(userData.password),
-				status: UserStatus.unverified,
+				status: UserStatus.active, // Changed from unverified to active
 				campus_id: userData.campus_id,
 				nik: userData.nik
 			})
@@ -155,11 +155,12 @@ class AuthService {
 			console.log(updateSchedule)
 		}
 
-		await this.otpService.sendOtp({
-			user_id: newUser.id,
-			email: newUser.email,
-			name: newUser.name,
-		})
+		// OTP sending commented out to remove verification requirement
+		// await this.otpService.sendOtp({
+		// 	user_id: newUser.id,
+		// 	email: newUser.email,
+		// 	name: newUser.name,
+		// })
 
 		//token on register
 		const accessKey = randomBytes(16).toString("hex");
@@ -363,39 +364,42 @@ class AuthService {
 			throw new HttpException(409, "Invalid email / password.");
 		}
 
-		if (findUser["status"] === "unverified") {
-			const insertLog:any = await ModelLoginLogs.query().insert({
-				id:generateId(),
-				user_id:findUser.id,
-				ip:userData.ip,
-				status:'failed'
-			}).into(ModelLoginLogs.tableName)
-			if(!insertLog) throw new HttpException(409, "Fail update data"); 
+		// Commented out unverified status check to allow unverified users to login
+		// if (findUser["status"] === "unverified") {
+		// 	const insertLog:any = await ModelLoginLogs.query().insert({
+		// 		id:generateId(),
+		// 		user_id:findUser.id,
+		// 		ip:userData.ip,
+		// 		status:'failed'
+		// 	}).into(ModelLoginLogs.tableName)
+		// 	if(!insertLog) throw new HttpException(409, "Fail update data"); 
+		// 
+		// 	throw new HttpException(409, "Account not verified.");
+		// }
 
-			throw new HttpException(409, "Account not verified.");
-		}
+		//OTP is valid for 1 week - DISABLED
+		// let isNeedOtp:any = await ModelOtpVerification.query()
+		// .where('user_id',findUser.id)
+		// .whereDeleted()
+		// .orderBy('id','desc')
+		// .first();
+		// if (isNeedOtp) {
+		// 	const days = moment(isNeedOtp.created_at).add('7','days')
+		// 	const now = moment()
+		// 	const diff = days.diff(now,'day')
+		// 	if(diff < 1){
+		// 		isNeedOtp = true
+		// 	}else{
+		// 		isNeedOtp = false
+		// 	}
+		// }
 
-		//OTP is valid for 1 week
-		let isNeedOtp:any = await ModelOtpVerification.query()
-		.where('user_id',findUser.id)
-		.whereDeleted()
-		.orderBy('id','desc')
-		.first();
-		if (isNeedOtp) {
-			const days = moment(isNeedOtp.created_at).add('7','days')
-			const now = moment()
-			const diff = days.diff(now,'day')
-			if(diff < 1){
-				isNeedOtp = true
-			}else{
-				isNeedOtp = false
-			}
-		}
-
-		if(findUser.role == 'Super Admin'){
-			isNeedOtp = false
-		}
-		// isNeedOtp = false
+		// if(findUser.role == 'Super Admin'){
+		// 	isNeedOtp = false
+		// }
+		
+		// Disable OTP requirement for all users
+		let isNeedOtp = false;
 		
 		if(isNeedOtp){
 			if(!userData.otp_code)
