@@ -2,8 +2,9 @@ import { NextFunction, Response } from "express";
 import { HttpException } from "@exceptions/HttpException";
 import { RequestWithUser } from "@interfaces/auth.interface";
 import { ModelProjectMentor } from "@/models/project_mentor.model";
+import { RoleName } from "@/dtos/roles.dto";
 
-const projectMentorGuardMiddleware = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const projectMentorGuardMiddleware = async (req: RequestWithUser, _res: Response, next: NextFunction) => {
   try {
     const user = req["user"];
     const projectId = req.body.project_id || req.query.project_id || req.params.project_id;
@@ -12,7 +13,7 @@ const projectMentorGuardMiddleware = async (req: RequestWithUser, res: Response,
       return next();
     }
 
-    if (user.role.name === "super_admin") {
+    if (user?.role?.name === RoleName.super_admin) {
       return next();
     }
 

@@ -3,7 +3,7 @@ import { Knex } from "knex";
 
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.alterTable('sprint', table => {
-    table.string('project_id').nullable().references('id').inTable('project').onDelete('cascade');
+    table.string('project_id').notNullable().references('id').inTable('project').onDelete('cascade');
   });
 }
 

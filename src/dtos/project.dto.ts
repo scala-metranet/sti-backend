@@ -1,8 +1,11 @@
-import { IsString, IsOptional, IsDateString, IsUUID, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsArray } from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
   public name: string;
+
+  @IsString()
+  public company_id: string;
 
   @IsOptional()
   @IsString()
@@ -18,7 +21,7 @@ export class CreateProjectDto {
 
   @IsOptional()
   @IsArray()
-  @IsUUID(4, { each: true })
+  @IsString({ each: true })
   public mentor_ids?: string[];
 }
 
@@ -41,6 +44,6 @@ export class UpdateProjectDto {
 
   @IsOptional()
   @IsArray()
-  @IsUUID(4, { each: true })
+  @IsString({ each: true })
   public mentor_ids?: string[];
 }

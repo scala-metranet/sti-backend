@@ -15,7 +15,7 @@ export class ModelSprint extends softDelete(Model) implements Sprint {
   objective!: string;
   squad_leader_id!: string;
   squad_id!: string;
-  project_id?: string;
+  project_id!: string;
   start_date!: string;
   end_date!: string;
   mentor_notes!: string;

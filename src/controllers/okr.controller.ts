@@ -57,7 +57,8 @@ class OkrController {
 	): Promise<void> => {
 		try {
 			const id: string = req.params.id;
-			const data: Sprint = await this.service.findById(id);
+			const user = req["user"];
+			const data: Sprint = await this.service.findById(id, user.company_id);
 
 			res.status(200).json({ data: data, message: "Get detail successfull." });
 		} catch (error) {
@@ -129,7 +130,7 @@ class OkrController {
 	): Promise<void> => {
 		try {
 			const param:any = req.body;
-			const data:Sprint = await this.service.createSprint({...param});
+			const data:Sprint = await this.service.createSprint({...param, user_id: req['user'].id});
 
 			res.status(201).json({ data: data, message: "Data created." });
 		} catch (error) {
@@ -176,6 +177,22 @@ class OkrController {
 			const data:Sprint = await this.service.deleteSprint({id:req.params.id,user_id:req['user'].id});
 
 			res.status(201).json({ data: data, message: "Data deleted." });
+		} catch (error) {
+			next(error);
+		}
+	};
+
+	public getSprintsByProject = async (
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> => {
+		try {
+			const project_id: string = req.params.project_id;
+			const user = req['user'];
+			const data: Sprint[] = await this.service.getSprintsByProject(project_id, user.company_id);
+
+			res.status(200).json({ data: data, message: "Get sprints by project successful." });
 		} catch (error) {
 			next(error);
 		}

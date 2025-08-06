@@ -24,10 +24,10 @@ class OkrService {
     return data;
   }
 
-  public async findById(id: string): Promise<Sprint> {
-    const data: Sprint = await ModelSprint.query()
+  public async findById(id: string, userCompanyId?: string): Promise<Sprint> {
+    let query = ModelSprint.query()
       .findById(id)
-      .withGraphFetched("[squad_leader,okr.[okr_task.[task_mentee.mentee,task_result.user],okr_mentee.mentee]]")
+      .withGraphFetched("[squad_leader,okr.[okr_task.[task_mentee.mentee,task_result.user],okr_mentee.mentee],project.company]")
       .modifyGraph('okr.okr_task',builder => {
         builder.whereNull('deleted_at');
         builder.orderBy('id','asc');
@@ -35,7 +35,15 @@ class OkrService {
       .modifyGraph('okr',builder => {
         builder.orderBy('id','asc');
       });
-    if (!data) throw new HttpException(409, "Data doesn't exist");
+
+    const data: any = await query;
+    if (!data) throw new HttpException(409, "Sprint doesn't exist");
+
+    // Company-based access control
+    if (userCompanyId && data.project && data.project.company_id !== userCompanyId) {
+      throw new HttpException(403, "Access denied: Sprint belongs to different company");
+    }
+
     return data;
   }
 
@@ -241,29 +249,30 @@ class OkrService {
   }
 
   public async createSprint(param: any): Promise<any> {
-    // Validate project_id and mentor assignment if project_id is provided
-    if (param.project_id) {
-      const { ModelProject } = require('@/models/project.model');
-      const { ModelProjectMentor } = require('@/models/project_mentor.model');
-      
-      // Check if project exists
-      const project = await ModelProject.query().findById(param.project_id);
-      if (!project) throw new HttpException(409, "Project not found");
-      
-      // Check if current user is assigned as mentor to this project
-      const projectMentor = await ModelProjectMentor.query()
-        .where('project_id', param.project_id)
-        .where('mentor_id', param.user_id)
-        .first();
-      
-      if (!projectMentor) {
-        throw new HttpException(403, "Only assigned mentors can create sprints for this project");
-      }
+    if (!param.project_id) {
+      throw new HttpException(400, "project_id is required");
+    }
+
+    const { ModelProject } = require('@/models/project.model');
+    const { ModelProjectMentor } = require('@/models/project_mentor.model');
+    
+    // Check if project exists
+    const project = await ModelProject.query().findById(param.project_id);
+    if (!project) throw new HttpException(409, "Project not found");
+    
+    // Check if current user is assigned as mentor to this project
+    const projectMentor = await ModelProjectMentor.query()
+      .where('project_id', param.project_id)
+      .where('mentor_id', param.user_id)
+      .first();
+    
+    if (!projectMentor) {
+      throw new HttpException(403, "Only assigned mentors can create sprints for this project");
     }
 
     const sprintMaster:any = await ModelSprintMaster.query().where('id',param.sprint_master_id).first();
     if (!sprintMaster) throw new HttpException(409, "Data failed to input");
-    //get sprint master name
+    
     let sprintNum = 0;
     const sprintName:any = await ModelSprintMaster.query().where('batch_master_id',sprintMaster.batch_master_id).whereNotDeleted();
     for (let index = 0; index < sprintName.length; index++) {
@@ -621,6 +630,27 @@ class OkrService {
     await leaderboardService.generateScore({
       user_id:data.mentee_id
     })
+    return data;
+  }
+
+  public async getSprintsByProject(project_id: string, userCompanyId?: string): Promise<Sprint[]> {
+    if (isEmpty(project_id)) throw new HttpException(400, "Project ID is required");
+
+    let query = ModelSprint.query()
+      .where('project_id', project_id)
+      .withGraphFetched('[project.company, squad_leader, okr]')
+      .orderBy('created_at', 'desc');
+
+    const data: any[] = await query;
+
+    // Company-based access control
+    if (userCompanyId && data.length > 0) {
+      const projectCompanyId = data[0].project?.company?.id;
+      if (projectCompanyId && projectCompanyId !== userCompanyId) {
+        throw new HttpException(403, "Access denied: Project belongs to different company");
+      }
+    }
+
     return data;
   }
 }

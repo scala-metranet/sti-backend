@@ -25,11 +25,11 @@ class ProjectService {
     return data;
   }
 
-  public async create(param: CreateProjectDto, companyId: string): Promise<Project> {
+  public async create(param: CreateProjectDto): Promise<Project> {
     const projectId = generateId();
     const projectData = {
       id: projectId,
-      company_id: companyId,
+      company_id: param.company_id,
       name: param.name,
       description: param.description,
       start_date: param.start_date ? new Date(param.start_date) : null,
@@ -53,7 +53,7 @@ class ProjectService {
         .into(ModelProjectMentor.tableName);
     }
 
-    return this.findById(createData.id, companyId);
+    return this.findById(createData.id, param.company_id);
   }
 
   public async update(id: string, param: UpdateProjectDto, companyId: string): Promise<Project> {

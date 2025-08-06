@@ -26,6 +26,7 @@ class OkrRoute implements Routes {
     this.router.get(`${this.path}/sprint/activity/:id(\\w+)`, authMiddleware, this.controller.getSprintActivity);
     this.router.get(`${this.path}/sprint/mentee/assign/:id(\\w+)`, authMiddleware, this.controller.getSprintAssign);
     this.router.get(`${this.path}/sprint/mentee/:id(\\w+)`, authMiddleware, this.controller.getSprint);
+    this.router.get(`${this.path}/sprint/project/:project_id(\\w+)`, authMiddleware, this.controller.getSprintsByProject);
     this.router.post(`${this.path}/sprint`, authMiddleware, projectMentorGuardMiddleware, this.controller.createSprint);
     this.router.post(`${this.path}/sprint/okr`, authMiddleware, this.controller.createSprintKr);
     this.router.put(`${this.path}/sprint/:id(\\w+)`, authMiddleware, this.controller.updateSprint);

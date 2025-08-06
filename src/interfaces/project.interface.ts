@@ -12,6 +12,7 @@ export interface Project {
 
 export interface CreateProjectDto {
   name: string;
+  company_id: string;
   description?: string;
   start_date?: string;
   end_date?: string;

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreateSprintDto {
   @IsString()
@@ -7,15 +7,14 @@ export class CreateSprintDto {
   @IsString()
   public objective: string;
 
-  @IsUUID(4)
+  @IsString()
   public squad_leader_id: string;
 
-  @IsUUID(4)
+  @IsString()
   public squad_id: string;
 
-  @IsOptional()
-  @IsUUID(4)
-  public project_id?: string;
+  @IsString()
+  public project_id: string;
 
   @IsString()
   public start_date: string;
@@ -42,15 +41,15 @@ export class UpdateSprintDto {
   public objective?: string;
 
   @IsOptional()
-  @IsUUID(4)
+  @IsString()
   public squad_leader_id?: string;
 
   @IsOptional()
-  @IsUUID(4)
+  @IsString()
   public squad_id?: string;
 
   @IsOptional()
-  @IsUUID(4)
+  @IsString()
   public project_id?: string;
 
   @IsOptional()
