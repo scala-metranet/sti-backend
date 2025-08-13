@@ -13,7 +13,6 @@ import { ModelOkrTaskMentee } from "@/models/okr_task_mentee.model";
 import { OkrTask } from "@/interfaces/okr_task.interface";
 import { ModelOkrTaskResult } from "@/models/okr_task_result.model";
 import LeaderboardService from "./leaderboard.service";
-import { ModelSprintMaster } from "@/models/sprint_master.model";
 import { ModelUserInternship } from "@/models/user_internship.model";
 import { ModelUser } from "@/models/user.model";
 import { ModelSprintActivity } from "@/models/sprint_activity.model";
@@ -270,25 +269,20 @@ class OkrService {
       throw new HttpException(403, "Only assigned mentors can create sprints for this project");
     }
 
-    const sprintMaster:any = await ModelSprintMaster.query().where('id',param.sprint_master_id).first();
-    if (!sprintMaster) throw new HttpException(409, "Data failed to input");
+    // Count existing sprints in same project for sequential numbering
+    const sprintCount = await ModelSprint.query()
+      .where('project_id', param.project_id)
+      .whereNotDeleted()
+      .resultSize();
+    const sprintNum = sprintCount + 1;
     
-    let sprintNum = 0;
-    const sprintName:any = await ModelSprintMaster.query().where('batch_master_id',sprintMaster.batch_master_id).whereNotDeleted();
-    for (let index = 0; index < sprintName.length; index++) {
-      const element = sprintName[index];
-      if(element.id === sprintMaster.id){
-        sprintNum = index+1;
-      }
-    }
     //input sprint
     const paramSprint = {
-      sprint: `SPRINT #${sprintNum}`,
+      sprint: param.sprint || `SPRINT #${sprintNum}`,
       objective: param.objective,
       start_date: param.start_date,
       end_date: param.end_date,
       user_id: param.user_id,
-      sprint_master_id: param.sprint_master_id,
       user_internship_id: param.user_internship_id,
       project_id: param.project_id
     };
@@ -321,31 +315,18 @@ class OkrService {
   }
 
   public async updateSprint(param: any): Promise<any> {
-    const sprintMaster:any = await ModelSprintMaster.query().where('id',param.sprint_master_id).first();
-    if (!sprintMaster) throw new HttpException(409, "Data failed to input");
-    //get sprint master name
-    let sprintNum = 0;
-    const sprintName:any = await ModelSprintMaster.query().where('batch_master_id',sprintMaster.batch_master_id).whereNotDeleted();
-    for (let index = 0; index < sprintName.length; index++) {
-      const element = sprintName[index];
-      if(element.id === sprintMaster.id){
-        sprintNum = index+1;
-      }
-    }
     //input sprint
     const paramSprint = {
-      sprint: `SPRINT #${sprintNum}`,
+      sprint: param.sprint,
       objective: param.objective,
       start_date: param.start_date,
-      end_date: param.end_date,
-      sprint_master_id: param.sprint_master_id
+      end_date: param.end_date
     };
     const createData: any = await ModelSprint.query()
       .update({ ...paramSprint })
       .where('id',param.id)
       .into(ModelSprint.tableName);
     if (!createData) throw new HttpException(409, "Data failed to input");
-
 
     const data: any = await ModelSprint.query()
       .where('id',param.id)
@@ -383,11 +364,8 @@ class OkrService {
     let month = moment().format('M');
     let year = moment().format('YYYY');
     if(sprint){
-      const sprintMaster:any = await ModelSprintMaster.query().where('id',sprint.sprint_master_id).first();
-      if(sprintMaster){
-        month = moment(sprintMaster.period_start).format('M');
-        year = moment(sprintMaster.period_start).format('YYYY');
-      }
+      month = moment(sprint.start_date).format('M');
+      year = moment(sprint.start_date).format('YYYY');
     }
     const paramTask = {
       title: param.name,

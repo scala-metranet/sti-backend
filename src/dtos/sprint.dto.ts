@@ -7,11 +7,13 @@ export class CreateSprintDto {
   @IsString()
   public objective: string;
 
+  @IsOptional()
   @IsString()
-  public squad_leader_id: string;
+  public squad_leader_id?: string;
 
+  @IsOptional()
   @IsString()
-  public squad_id: string;
+  public squad_id?: string;
 
   @IsString()
   public project_id: string;
@@ -21,6 +23,13 @@ export class CreateSprintDto {
 
   @IsString()
   public end_date: string;
+
+  @IsString()
+  public user_id: string;
+
+  @IsOptional()
+  @IsString()
+  public user_internship_id?: string;
 
   @IsOptional()
   @IsString()
@@ -59,6 +68,14 @@ export class UpdateSprintDto {
   @IsOptional()
   @IsString()
   public end_date?: string;
+
+  @IsOptional()
+  @IsString()
+  public user_id?: string;
+
+  @IsOptional()
+  @IsString()
+  public user_internship_id?: string;
 
   @IsOptional()
   @IsString()

@@ -18,7 +18,6 @@ import moment from "moment";
 // import { ModelBatchMaster } from "@/models/batch_master.model";
 import { JSDOM } from "jsdom";
 import { ModelOkrTask } from "@/models/okr_task.model";
-import { ModelSprintMaster } from "@/models/sprint_master.model";
 import { ModelLeaderboard } from "@/models/leaderboard.model";
 class ScoringService {
   public async getMaster(param:any): Promise<any> {
@@ -744,17 +743,14 @@ class ScoringService {
         const elementKr = okrTask[indexkr];
         const sprint:any = await ModelSprint.query().where('id',elementKr.sprint_id).first();
         if(sprint){
-          const sprintMaster:any = await ModelSprintMaster.query().where('id',sprint.sprint_master_id).first();
-          if(sprintMaster){
-            const month = moment(sprintMaster.period_start).format('M');
-            const year = moment(sprintMaster.period_start).format('YYYY');
-            console.log(elementKr.id,elementKr.month,elementKr.year,month,year)
-            //update
-            await ModelOkrTask.query().update({
-              month:month,
-              year:year
-            }).where('id',elementKr.id).into(ModelOkrTask.tableName)
-          }
+          const month = moment(sprint.start_date).format('M');
+          const year = moment(sprint.start_date).format('YYYY');
+          console.log(elementKr.id,elementKr.month,elementKr.year,month,year)
+          //update
+          await ModelOkrTask.query().update({
+            month:month,
+            year:year
+          }).where('id',elementKr.id).into(ModelOkrTask.tableName)
         }
       }
       const leaderboardService:any = new LeaderboardService;
@@ -783,17 +779,14 @@ class ScoringService {
         const elementKr = okrTask[indexkr];
         const sprint:any = await ModelSprint.query().where('id',elementKr.sprint_id).first();
         if(sprint){
-          const sprintMaster:any = await ModelSprintMaster.query().where('id',sprint.sprint_master_id).first();
-          if(sprintMaster){
-            const month = moment(sprintMaster.period_start).format('M');
-            const year = moment(sprintMaster.period_start).format('YYYY');
-            // console.log(elementKr.id,elementKr.month,elementKr.year,month,year)
-            //update
-            await ModelOkrTask.query().update({
-              month:month,
-              year:year
-            }).where('id',elementKr.id).into(ModelOkrTask.tableName)
-          }
+          const month = moment(sprint.start_date).format('M');
+          const year = moment(sprint.start_date).format('YYYY');
+          // console.log(elementKr.id,elementKr.month,elementKr.year,month,year)
+          //update
+          await ModelOkrTask.query().update({
+            month:month,
+            year:year
+          }).where('id',elementKr.id).into(ModelOkrTask.tableName)
         }
       }
       const leaderboardService:any = new LeaderboardService;

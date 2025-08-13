@@ -131,7 +131,7 @@ class AuthService {
 				id: generateId(),
 				role_id: findRole.id,
 				password: await hash(userData.password),
-				status: UserStatus.active, // Changed from unverified to active
+				status: UserStatus.active, 
 				campus_id: userData.campus_id,
 				nik: userData.nik
 			})

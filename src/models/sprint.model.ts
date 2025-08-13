@@ -20,6 +20,8 @@ export class ModelSprint extends softDelete(Model) implements Sprint {
   end_date!: string;
   mentor_notes!: string;
   mentor_lesson!: string;
+  user_id!: string;
+  user_internship_id!: string;
 
   static tableName = 'sprint'; // database table name
   static idColumn = 'id'; // id column name

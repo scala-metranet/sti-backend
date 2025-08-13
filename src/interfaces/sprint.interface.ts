@@ -10,4 +10,6 @@ export interface Sprint {
   end_date: string;
   mentor_notes: string;
   mentor_lesson: string;
+  user_id: string;
+  user_internship_id: string;
 }
