@@ -23,6 +23,23 @@ class OkrService {
     return data;
   }
 
+  public async findAllByUser(userId: string): Promise<Squad[]> {
+    const data: Squad[] = await ModelSquad.query()
+      .select("*")
+      .from(ModelSquad.tableName)
+      .where(builder => {
+        builder.where("mentor_id", userId)
+          .orWhereExists(ModelUser.query()
+            .select('id')
+            .from('user')
+            .where('squad_id', ModelSquad.ref('id'))
+            .where('id', userId)
+          );
+      })
+      .withGraphFetched("[mentee,mentor]");
+    return data;
+  }
+
   public async findById(id: string, userCompanyId?: string): Promise<Sprint> {
     let query = ModelSprint.query()
       .findById(id)
@@ -354,6 +371,31 @@ class OkrService {
     .where("okr_id", param.okr_id)
     .whereNotDeleted()
     .withGraphFetched("[okr,task_mentee.mentee,task_result.user]");
+
+    return okrTask;
+  }
+
+  public async getTaskByUser(param: any, userId: string): Promise<OkrTask[]> {
+    const okrTask:any[] = await ModelOkrTask.query()
+      .where("sprint_id", param.sprint_id)
+      .where("okr_id", param.okr_id)
+      .whereNotDeleted()
+      .where(builder => {
+        builder.where("mentee_id", userId)
+          .orWhereExists(ModelOkrTaskMentee.query()
+            .where('okr_task_id', ModelOkrTask.ref('id'))
+            .where('mentee_id', userId))
+          .orWhereExists(ModelOkr.query()
+            .where('id', param.okr_id)
+            .where('mentor_id', userId))
+          .orWhereExists(ModelSprint.query()
+            .where('id', param.sprint_id)
+            .where(subBuilder => {
+              subBuilder.where('squad_leader_id', userId)
+                .orWhere('mentor_id', userId);
+            }));
+      })
+      .withGraphFetched("[okr,task_mentee.mentee,task_result.user]");
 
     return okrTask;
   }

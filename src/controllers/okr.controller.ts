@@ -205,7 +205,16 @@ class OkrController {
 	): Promise<void> => {
 		try {
 			const param:any = req.query;
-			const data:OkrTask[] = await this.service.getTask({...param});
+			const user = req["user"];
+			
+			// If mentee_id matches current user or no mentee_id provided, use regular method
+			// Otherwise, use user-filtered method to ensure access control
+			let data:OkrTask[];
+			if (param.mentee_id && param.mentee_id !== user.id) {
+				data = await this.service.getTaskByUser({...param}, user.id);
+			} else {
+				data = await this.service.getTask({...param});
+			}
 
 			res.status(201).json({ data: data, message: "Data created." });
 		} catch (error) {

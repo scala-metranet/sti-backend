@@ -13,7 +13,7 @@ const projectMentorGuardMiddleware = async (req: RequestWithUser, _res: Response
       return next();
     }
 
-    if (user?.role?.name === RoleName.super_admin) {
+    if ((user as any)?.role?.name === RoleName.super_admin) {
       return next();
     }
 
