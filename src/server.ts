@@ -53,7 +53,7 @@ const app = new App([
   new ClassesRoute(),
   new GraduationRoute(),
   new AttendanceRoute(),
-  new MitraRoute()
+  new MitraRoute(),
 ]);
 
 app.listen();
