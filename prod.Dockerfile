@@ -1,16 +1,19 @@
 FROM node:18-alpine3.16
-RUN apk add g++ make py3-pip
-RUN npm install -g pnpm
 
-ARG NODE_ENV
-ENV NODE_ENV $NODE_ENV
-
-COPY . ./app
+RUN apk add --no-cache g++ make py3-pip
+RUN npm install -g pnpm@7
 
 WORKDIR /app
 
-RUN npm install
-EXPOSE 80
+COPY package*.json pnpm-lock.yaml tsconfig.json ./
 
-CMD ["pnpm","start:nodemon"]
+# pertama sync lockfile
+RUN pnpm install --no-frozen-lockfile
+# lalu pakai frozen supaya konsisten
+RUN pnpm install --frozen-lockfile
 
+COPY . .
+
+RUN pnpm run build:tsc
+
+CMD ["pnpm", "start:tsc"]

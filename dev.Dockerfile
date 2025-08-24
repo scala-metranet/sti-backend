@@ -1,16 +1,14 @@
+# Dockerfile.dev (Development)
 FROM node:18-alpine3.16
-RUN apk add g++ make py3-pip
+RUN apk add --no-cache g++ make py3-pip
 RUN npm install -g pnpm
 
-ARG NODE_ENV
-ENV NODE_ENV $NODE_ENV
-
-COPY . ./app
-
 WORKDIR /app
+COPY . .
 
-RUN npm install
-EXPOSE 80
+RUN pnpm install
 
-CMD ["pnpm","dev"]
+ENV PORT=3000
+EXPOSE 3000
 
+CMD ["pnpm", "dev:local"]
