@@ -153,7 +153,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASSWORD'
                 )]) {
                     sh '''#!/bin/bash
-                        docker build --no-cache -t "$DOCKER_IMAGE:$NEW_VERSION" .
+                        docker build --no-cache -t "$DOCKER_IMAGE:$NEW_VERSION" -f prod.Dockerfile .
                         echo "$DOCKER_PASSWORD" | docker login "$DOCKER_REGISTRY" -u "$DOCKER_USERNAME" --password-stdin
                         docker push "$DOCKER_IMAGE:$NEW_VERSION"
                     '''
