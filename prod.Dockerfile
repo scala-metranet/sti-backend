@@ -17,6 +17,6 @@ RUN pnpm install --no-frozen-lockfile
 
 COPY . .
 
-RUN pnpm run build:tsc
+RUN pnpm run build
 
 CMD ["pnpm", "start:tsc"]
