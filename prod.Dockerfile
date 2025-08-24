@@ -1,7 +1,10 @@
 FROM node:20
 
-RUN apk add --no-cache g++ make py3-pip
-RUN npm install -g pnpm@7
+# RUN apk add --no-cache g++ make py3-pip
+
+RUN apt-get update && apt-get install -y g++ make python3 python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+RUN npm install -g pnpm
 
 WORKDIR /app
 
