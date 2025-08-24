@@ -4,7 +4,7 @@ FROM node:20
 
 RUN apt-get update && apt-get install -y g++ make python3 python3-pip \
     && rm -rf /var/lib/apt/lists/*
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8
 
 WORKDIR /app
 
