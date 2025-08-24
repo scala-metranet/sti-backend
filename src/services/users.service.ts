@@ -75,6 +75,11 @@ class UserService {
       userQuery = userQuery.withGraphFetched("[user_internship.[internship.[mentor,city,province],document],campus]");
     }
 
+    if (param.role === "mentee") {
+      userQuery = userQuery.where("role.name", "=", "Mentee");
+      userQuery = userQuery.withGraphFetched("[user_internship.[internship.[mentor,city,province],document],campus]");
+    }
+
     if (param.campus_id) {
       userQuery = userQuery.where("user.campus_id", "=", param.campus_id);
     }
