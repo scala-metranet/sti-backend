@@ -1,4 +1,4 @@
-FROM node:18-alpine3.16
+FROM node:20
 
 RUN apk add --no-cache g++ make py3-pip
 RUN npm install -g pnpm@7
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json pnpm-lock.yaml tsconfig.json ./
 
 # pertama sync lockfile
-RUN pnpm install --no-frozen-lockfile
+# RUN pnpm install --no-frozen-lockfile
 # lalu pakai frozen supaya konsisten
 RUN pnpm install --frozen-lockfile
 
