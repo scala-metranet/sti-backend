@@ -14,7 +14,8 @@ class ProjectController {
     try {
       const companyId = req.query.company_id as string;
       if (!companyId) {
-        return res.status(400).json({ message: "company_id query parameter is required" });
+        res.status(400).json({ message: "company_id query parameter is required" });
+        return;
       }
       const data: any = await this.service.findAll(companyId);
       console.log(data)
@@ -33,7 +34,8 @@ class ProjectController {
       const id: string = req.params.id;
       const companyId = req.query.company_id as string;
       if (!companyId) {
-        return res.status(400).json({ message: "company_id query parameter is required" });
+        res.status(400).json({ message: "company_id query parameter is required" });
+        return;
       }
       const data: Project = await this.service.findById(id, companyId);
       res.status(200).json({ data: data, message: "Project retrieved successfully" });
@@ -66,7 +68,8 @@ class ProjectController {
       const param: UpdateProjectDto = req.body;
       const companyId = req.query.company_id as string;
       if (!companyId) {
-        return res.status(400).json({ message: "company_id query parameter is required" });
+        res.status(400).json({ message: "company_id query parameter is required" });
+        return;
       }
       const data: Project = await this.service.update(id, param, companyId);
       res.status(200).json({ data: data, message: "Project updated successfully" });
@@ -84,7 +87,8 @@ class ProjectController {
       const id: string = req.params.id;
       const companyId = req.query.company_id as string;
       if (!companyId) {
-        return res.status(400).json({ message: "company_id query parameter is required" });
+        res.status(400).json({ message: "company_id query parameter is required" });
+        return;
       }
       const data: Project = await this.service.delete(id, companyId);
       res.status(200).json({ data: data, message: "Project deleted successfully" });
