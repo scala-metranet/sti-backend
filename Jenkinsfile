@@ -108,7 +108,7 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: "${env.ENV_FILE_CRED}", variable: 'ENV_FILE')]) {
                     sh '''
-                        cp "$ENV_FILE" .env
+                        cp "$ENV_FILE" env.production
                     '''
                 }
             }
