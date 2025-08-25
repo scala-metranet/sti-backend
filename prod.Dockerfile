@@ -22,6 +22,6 @@ RUN pnpm run build:tsc
 #CMD ["pnpm", "start:tsc"]
 #CMD ["node", "dist/server.js"]
 ENV NODE_ENV=production
-ENV PORT=3000
+#ENV PORT=3000
 
 CMD ["node", "dist/server.js"]
