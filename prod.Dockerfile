@@ -19,4 +19,5 @@ COPY . .
 
 RUN pnpm run build:tsc
 
-CMD ["pnpm", "start:tsc"]
+#CMD ["pnpm", "start:tsc"]
+CMD ["node", "dist/server.js"]
