@@ -3,7 +3,6 @@ import { Routes } from "@interfaces/routes.interface";
 import { BASE_PATH } from "@config";
 import authMiddleware from "@middlewares/auth.middleware";
 import projectMentorGuardMiddleware from "@middlewares/project-mentor.middleware";
-import okrAssignmentGuardMiddleware from "@middlewares/okr-assignment.middleware";
 import OkrController from "@/controllers/okr.controller";
 import multer from "multer";
 const upload = multer({ dest: "uploads/" });
