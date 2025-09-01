@@ -101,12 +101,12 @@ class Internshipv2Service {
   public async create(param: any): Promise<Internship> {
     //check mentor
     const findMentor: User = await Users.query().select().from(Users.tableName).where("id", "=", param.mentor_id).first();
-    if (!findMentor) throw new HttpException(500, `Mentor doesn't exist`);
+    if (!findMentor) throw new HttpException(404, `Mentor doesn't exist`);
 
     //check company
     if(param.company_id){
       const findCompany: Company = await ModelCompany.query().select().from(ModelCompany.tableName).where("id", "=", param.company_id).first();
-      if (!findCompany) throw new HttpException(500, `Company doesn't exist`);
+      if (!findCompany) throw new HttpException(404, `Company doesn't exist`);
     }
     
     //check internship program
@@ -115,7 +115,7 @@ class Internshipv2Service {
       .from(ModelInternshipProgram.tableName)
       .where("id", "=", param.program_id)
       .first();
-    if (!findInternshipProgram) throw new HttpException(500, `Internship Program doesn't exist`);
+    if (!findInternshipProgram) throw new HttpException(404, `Internship Program doesn't exist`);
 
     //screening question
     const screeningQuestion = param.screening_question 
