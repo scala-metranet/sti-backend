@@ -1,6 +1,5 @@
 import { Model, ModelObject } from "objection";
 import { InternshipProgram } from "@/interfaces/internship_program.interface";
-import { ModelInternship } from "./internship.model";
 
 export class ModelInternshipProgram extends Model implements InternshipProgram {
   id!: string;
@@ -12,7 +11,7 @@ export class ModelInternshipProgram extends Model implements InternshipProgram {
   static relationMappings = {
     internship: {
       relation: Model.HasManyRelation,
-      modelClass: ModelInternship,
+      modelClass: __dirname + '/internship.model',
       join: {
         from: "internship_program.id",
         to: "internship.program_id",
