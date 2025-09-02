@@ -12,6 +12,7 @@ export class ModelOkr extends Model implements Okr {
   sprint_id!: string;
   due_date!: string;
   description!: string;
+  user_id!: string;
 
   static tableName = 'okr'; // database table name
   static idColumn = 'id'; // id column name

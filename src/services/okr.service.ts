@@ -16,6 +16,7 @@ import LeaderboardService from "./leaderboard.service";
 import { ModelUserInternship } from "@/models/user_internship.model";
 import { ModelUser } from "@/models/user.model";
 import { ModelSprintActivity } from "@/models/sprint_activity.model";
+import { PartialModelObject, Transaction } from "objection";
 
 class OkrService {
   public async findAll(): Promise<Squad[]> {
@@ -127,7 +128,6 @@ class OkrService {
     const createData: any = await ModelSprint.query()
       .insert({ id: generateId(), ...paramSprint })
       .into(ModelSprint.tableName);
-    console.log(param);
     //input okr
     const paramOkr = [];
     const paramOkrMentee = [];
@@ -164,69 +164,75 @@ class OkrService {
     const user:any = await ModelUser.query().where('id',id).first();
     if (!user) throw new HttpException(409, "Data failed to get");
 
-    let currentSprint:any = ModelSprint.query().select('*')
-      .from(ModelSprint.tableName);
-      if(user.squad_id != null){
-        currentSprint = currentSprint.where(builder => {
-          builder.where('squad_id',user.squad_id);
-          builder.orWhere('user_id',user.id)
-        })
-      }else{
-        currentSprint = currentSprint.where('user_id',user.id)
+    const today = moment().format('YYYY-MM-DD');
+    const whereByOwnership = (qb: any) => {
+      if (user.squad_id != null) {
+        qb.where('sprint.squad_id', user.squad_id)
+          .orWhere('sprint.user_id', user.id)
+          .orWhereExists(
+            ModelOkrTask.query()
+              .select(1)
+              .join('okr', 'okr.id', 'okr_task.okr_id')
+              .where('okr_task.mentee_id', user.id)
+              .whereRaw('okr.sprint_id = sprint.id')
+          );
+      } else {
+        qb.where('sprint.user_id', user.id)
+          .orWhereExists(
+            ModelOkrTask.query()
+              .select(1)
+              .join('okr', 'okr.id', 'okr_task.okr_id')
+              .where('okr_task.mentee_id', user.id)
+              .whereRaw('okr.sprint_id = sprint.id')
+          );
       }
-      currentSprint = await currentSprint.where('start_date','<=',moment().format('YYYY-MM-DD'))
-      .where('end_date','>=',moment().format('YYYY-MM-DD'))
-      .withGraphFetched('[squad_leader,okr.okr_task]')
-      .whereNotDeleted()
-      .modifyGraph('okr.okr_task',builder => {
-        builder.whereNull('deleted_at');
-        builder.orderBy('id','asc');
-      });
-      if (!currentSprint) throw new HttpException(409, "Data doesn't exist");
+    };
 
-    let historySprint:any = ModelSprint.query().select('*')
-      .from(ModelSprint.tableName)
-    if(user.squad_id != null){
-      historySprint = historySprint.where(builder => {
-        builder.where('squad_id',user.squad_id);
-        builder.orWhere('user_id',user.id)
-      })
-    }else{
-      historySprint = historySprint.where('user_id',user.id)
-    }
-    historySprint = await historySprint
-      .where('end_date','<',moment().format('YYYY-MM-DD'))
-      .withGraphFetched('[squad_leader,okr.okr_task]')
+    const currentSprint = await ModelSprint.query()
+      .select('sprint.*')
+      .from('sprint')
+      .where(whereByOwnership)
+      .where('sprint.start_date', '<=', today)
+      .where('sprint.end_date', '>=', today)
+      .withGraphJoined('[squad_leader, okr.okr_task]')
       .whereNotDeleted()
-      .orderBy('id','desc')
-      .modifyGraph('okr.okr_task',builder => {
-        builder.whereNull('deleted_at');
-        builder.orderBy('id','asc');
+      .modifyGraph('okr.okr_task', b => {
+        b.whereNull('okr_task.deleted_at').orderBy('okr_task.id', 'asc');
       });
-      if (!historySprint) throw new HttpException(409, "Data doesn't exist");
 
-    let upcomingSprint:any = ModelSprint.query().select('*')
-      .from(ModelSprint.tableName)
-      // .where('user_id','=',id)
-    if(user.squad_id != null){
-      upcomingSprint = upcomingSprint.where(builder => {
-        builder.where('squad_id',user.squad_id);
-        builder.orWhere('user_id',user.id)
-      })
-    }else{
-      upcomingSprint = upcomingSprint.where('user_id',user.id)
-    }
-      upcomingSprint = await upcomingSprint.where('start_date','>',moment().format('YYYY-MM-DD'))
-      // .where('end_date','<',moment().format('YYYY-MM-DD'))
-      .withGraphFetched('[squad_leader,okr.okr_task]')
+    const historySprint = await ModelSprint.query()
+      .select('sprint.*')
+      .from('sprint')
+      .where(whereByOwnership)
+      .where('sprint.end_date', '<', today)
+      .withGraphJoined('[squad_leader, okr.okr_task]')
       .whereNotDeleted()
-      .modifyGraph('okr.okr_task',builder => {
-        builder.whereNull('deleted_at');
-        builder.orderBy('id','asc');
+      .orderBy('sprint.id', 'desc')
+      .modifyGraph('okr.okr_task', b => {
+        b.whereNull('okr_task.deleted_at').orderBy('okr_task.id', 'asc');
       });
-      if (!historySprint) throw new HttpException(409, "Data doesn't exist");
 
-      return { currentSprint: currentSprint, historySprint: historySprint, upcomingSprint:upcomingSprint };
+    const upcomingSprint = await ModelSprint.query()
+      .select('sprint.*')
+      .from('sprint')
+      .where(whereByOwnership)
+      .where('sprint.start_date', '>', today)
+      .withGraphJoined('[squad_leader, okr.okr_task]')
+      .whereNotDeleted()
+      .modifyGraph('okr.okr_task', b => {
+        b.whereNull('okr_task.deleted_at').orderBy('okr_task.id', 'asc');
+      });
+
+    return { 
+      currentSprint, 
+      historySprint,
+      upcomingSprint,
+      meta: {
+        currentCount: currentSprint.length,
+        historyCount: historySprint.length,
+        upcomingCount: upcomingSprint.length
+      } 
+    };
   }
 
   public async getSprintActivity(id: any): Promise<any> {
@@ -245,23 +251,62 @@ class OkrService {
   }
 
   public async createSprintKr(param: any): Promise<any> {
-    const sprint:any = await ModelSprint.query().where('id',param.sprint_id).first();
+    const sprint = await ModelSprint.query().findById(param.sprint_id);
     if (!sprint) throw new HttpException(409, "Data failed to input");
-    //input sprint
-    const paramSprint = {
-      output: param.output,
-      key_result: param.key_result,
-      description: param.description,
-      due_date: param.due_date,
-      user_id: param.user_id,
-      sprint_id: param.sprint_id
-    };
-    const createData: any = await ModelOkr.query()
-      .insert({ id: generateId(), ...paramSprint })
-      .into(ModelOkr.tableName);
 
-    await this.createSprintLog(param.user_id,param.sprint_id,`membuat KR ${param.key_result} pada sprint`);
-    return createData;
+    const {
+      key_result,
+      output,
+      description,
+      due_date,
+      user_id,
+      sprint_id,
+      assigned_to = [] as string[],
+    } = param;
+
+    const result = await ModelOkr.transaction(async (trx: Transaction) => {
+      // --- create OKR ---
+      const payload: PartialModelObject<ModelOkr> = {
+        id: generateId(),
+        mentor_id: user_id,
+        key_result,
+        output,
+        description,
+        due_date,
+        user_id,
+        sprint_id,
+      };
+
+      const okr = await ModelOkr.query(trx).insert(payload);
+
+      // --- create tasks for each (mentee) ---
+      if (Array.isArray(assigned_to) && assigned_to.length > 0) {
+        const tasks: PartialModelObject<ModelOkrTask>[] = assigned_to.map((uid) => {
+          const m = moment(due_date, 'YYYY-MM-DD');
+          return {
+            id: generateId(),
+            title: output || key_result,
+            mentee_id: uid,
+            okr_id: okr.id,
+            sprint_id,
+            due_date,
+            status: 'Not Started',
+            result: '0',
+            attachment: '',
+            month: m.format('M'),
+            year: m.format('YYYY'),
+          };
+        });
+
+        await ModelOkrTask.query(trx).insert(tasks);
+      }
+
+      await this.createSprintLog(user_id, sprint_id, `membuat KR ${key_result} pada sprint`);
+
+      return okr;
+    });
+
+    return result;
   }
 
   public async createSprint(param: any): Promise<any> {
@@ -296,6 +341,7 @@ class OkrService {
     //input sprint
     const paramSprint = {
       sprint: param.sprint || `SPRINT #${sprintNum}`,
+      mentor_id: param.user_id,
       objective: param.objective,
       start_date: param.start_date,
       end_date: param.end_date,
@@ -313,7 +359,6 @@ class OkrService {
   }
 
   public async createSprintLog(user_id:any,sprint_id:any,message:any){
-    console.log('create sprint log')
     const user:any = await ModelUser.query().where('id',user_id).first();
     if (!user) throw new HttpException(409, "Data failed to input");
 
