@@ -160,80 +160,63 @@ class OkrService {
     return createData;
   }
 
-  public async getSprint(id: any): Promise<any> {
-    const user:any = await ModelUser.query().where('id',id).first();
-    if (!user) throw new HttpException(409, "Data failed to get");
+  public async getSprint(id: string): Promise<any> {
+    const user = await ModelUser.query().findById(id);
+    if (!user) throw new HttpException(404, "User doesn't exist");
 
-    const today = moment().format('YYYY-MM-DD');
-    const whereByOwnership = (qb: any) => {
-      if (user.squad_id != null) {
-        qb.where('sprint.squad_id', user.squad_id)
-          .orWhere('sprint.user_id', user.id)
-          .orWhereExists(
-            ModelOkrTask.query()
-              .select(1)
-              .join('okr', 'okr.id', 'okr_task.okr_id')
-              .where('okr_task.mentee_id', user.id)
-              .whereRaw('okr.sprint_id = sprint.id')
-          );
-      } else {
-        qb.where('sprint.user_id', user.id)
-          .orWhereExists(
-            ModelOkrTask.query()
-              .select(1)
-              .join('okr', 'okr.id', 'okr_task.okr_id')
-              .where('okr_task.mentee_id', user.id)
-              .whereRaw('okr.sprint_id = sprint.id')
-          );
-      }
+    const today = moment().format("YYYY-MM-DD");
+
+    // --- ownership by okr_mentee ---
+    const whereByMentee = (qb: any) => {
+      qb.whereExists(
+        ModelOkrMentee.query()
+          .select(1)
+          .join("okr", "okr.id", "okr_mentee.okr_id")
+          .where("okr_mentee.mentee_id", user.id)
+          .whereRaw("okr.sprint_id = sprint.id")
+      );
+    };
+
+    const baseGraph = (b: any) => {
+      b.whereNull("okr_task.deleted_at").orderBy("okr_task.id", "asc");
     };
 
     const currentSprint = await ModelSprint.query()
-      .select('sprint.*')
-      .from('sprint')
-      .where(whereByOwnership)
-      .where('sprint.start_date', '<=', today)
-      .where('sprint.end_date', '>=', today)
-      .withGraphJoined('[squad_leader, okr.okr_task]')
+      .select("sprint.*")
+      .from("sprint")
+      .where(whereByMentee)
+      .where("sprint.start_date", "<=", today)
+      .where("sprint.end_date", ">=", today)
       .whereNotDeleted()
-      .modifyGraph('okr.okr_task', b => {
-        b.whereNull('okr_task.deleted_at').orderBy('okr_task.id', 'asc');
-      });
+      .withGraphFetched("okr.[okr_task]") // eager load okr + tasks
+      .modifyGraph("okr.okr_task", baseGraph);
 
     const historySprint = await ModelSprint.query()
-      .select('sprint.*')
-      .from('sprint')
-      .where(whereByOwnership)
-      .where('sprint.end_date', '<', today)
-      .withGraphJoined('[squad_leader, okr.okr_task]')
+      .select("sprint.*")
+      .from("sprint")
+      .where(whereByMentee)
+      .where("sprint.end_date", "<", today)
       .whereNotDeleted()
-      .orderBy('sprint.id', 'desc')
-      .modifyGraph('okr.okr_task', b => {
-        b.whereNull('okr_task.deleted_at').orderBy('okr_task.id', 'asc');
-      });
+      .orderBy("sprint.id", "desc")
+      .withGraphFetched("okr.[okr_task]")
+      .modifyGraph("okr.okr_task", baseGraph);
 
     const upcomingSprint = await ModelSprint.query()
-      .select('sprint.*')
-      .from('sprint')
-      .where(whereByOwnership)
-      .where('sprint.start_date', '>', today)
-      .withGraphJoined('[squad_leader, okr.okr_task]')
+      .select("sprint.*")
+      .from("sprint")
+      .where(whereByMentee)
+      .where("sprint.start_date", ">", today)
       .whereNotDeleted()
-      .modifyGraph('okr.okr_task', b => {
-        b.whereNull('okr_task.deleted_at').orderBy('okr_task.id', 'asc');
-      });
+      .withGraphFetched("okr.[okr_task]")
+      .modifyGraph("okr.okr_task", baseGraph);
 
-    return { 
-      currentSprint, 
+    return {
+      currentSprint,
       historySprint,
       upcomingSprint,
-      meta: {
-        currentCount: currentSprint.length,
-        historyCount: historySprint.length,
-        upcomingCount: upcomingSprint.length
-      } 
     };
   }
+
 
   public async getSprintActivity(id: any): Promise<any> {
     const activity:any = await ModelSprintActivity.query().where('sprint_id',id).withGraphFetched('[user]').orderBy('id','desc');
@@ -252,7 +235,7 @@ class OkrService {
 
   public async createSprintKr(param: any): Promise<any> {
     const sprint = await ModelSprint.query().findById(param.sprint_id);
-    if (!sprint) throw new HttpException(409, "Data failed to input");
+    if (!sprint) throw new HttpException(404, "Sprint doesn't exist");
 
     const {
       key_result,
@@ -273,32 +256,22 @@ class OkrService {
         output,
         description,
         due_date,
-        user_id,
         sprint_id,
       };
 
       const okr = await ModelOkr.query(trx).insert(payload);
 
-      // --- create tasks for each (mentee) ---
+      // assigne mentee
       if (Array.isArray(assigned_to) && assigned_to.length > 0) {
-        const tasks: PartialModelObject<ModelOkrTask>[] = assigned_to.map((uid) => {
-          const m = moment(due_date, 'YYYY-MM-DD');
+        const okrMentees: PartialModelObject<ModelOkrMentee>[] = assigned_to.map((menteeId) => {
           return {
             id: generateId(),
-            title: output || key_result,
-            mentee_id: uid,
             okr_id: okr.id,
-            sprint_id,
-            due_date,
-            status: 'Not Started',
-            result: '0',
-            attachment: '',
-            month: m.format('M'),
-            year: m.format('YYYY'),
-          };
-        });
+            mentee_id: menteeId,
+          }
+        })
 
-        await ModelOkrTask.query(trx).insert(tasks);
+        await ModelOkrMentee.query(trx).insert(okrMentees);
       }
 
       await this.createSprintLog(user_id, sprint_id, `membuat KR ${key_result} pada sprint`);
@@ -345,8 +318,6 @@ class OkrService {
       objective: param.objective,
       start_date: param.start_date,
       end_date: param.end_date,
-      user_id: param.user_id,
-      user_internship_id: param.user_internship_id,
       project_id: param.project_id
     };
     const createData: any = await ModelSprint.query()
