@@ -89,7 +89,7 @@ class OkrController {
 		try {
 			const data:Sprint = await this.service.getSprint(req.params.id);
 
-			res.status(201).json({ data: data, message: "Get data successfull." });
+			res.status(200).json({ data: data, message: "Get data successfull." });
 		} catch (error) {
 			next(error);
 		}

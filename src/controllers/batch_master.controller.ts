@@ -63,7 +63,7 @@ class BatchMasterController {
 
 	public create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 		try {
-      const data: any = await this.service.create({...req.body,user:req['user']});
+      const data: any = await this.service.create({...req.body, user:req['user']});
       res.status(201).json({ data: data, message: "Data created." });
     } catch (error) {
       next(error);

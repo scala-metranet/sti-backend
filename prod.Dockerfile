@@ -1,6 +1,7 @@
 FROM node:18-alpine3.16
 
 RUN apk add --no-cache g++ make py3-pip
+
 RUN npm install -g pnpm@7
 
 WORKDIR /app

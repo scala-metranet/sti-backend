@@ -16,6 +16,7 @@ import LeaderboardService from "./leaderboard.service";
 import { ModelUserInternship } from "@/models/user_internship.model";
 import { ModelUser } from "@/models/user.model";
 import { ModelSprintActivity } from "@/models/sprint_activity.model";
+import { PartialModelObject, Transaction } from "objection";
 
 class OkrService {
   public async findAll(): Promise<Squad[]> {
@@ -127,7 +128,6 @@ class OkrService {
     const createData: any = await ModelSprint.query()
       .insert({ id: generateId(), ...paramSprint })
       .into(ModelSprint.tableName);
-    console.log(param);
     //input okr
     const paramOkr = [];
     const paramOkrMentee = [];
@@ -160,74 +160,63 @@ class OkrService {
     return createData;
   }
 
-  public async getSprint(id: any): Promise<any> {
-    const user:any = await ModelUser.query().where('id',id).first();
-    if (!user) throw new HttpException(409, "Data failed to get");
+  public async getSprint(id: string): Promise<any> {
+    const user = await ModelUser.query().findById(id);
+    if (!user) throw new HttpException(404, "User doesn't exist");
 
-    let currentSprint:any = ModelSprint.query().select('*')
-      .from(ModelSprint.tableName);
-      if(user.squad_id != null){
-        currentSprint = currentSprint.where(builder => {
-          builder.where('squad_id',user.squad_id);
-          builder.orWhere('user_id',user.id)
-        })
-      }else{
-        currentSprint = currentSprint.where('user_id',user.id)
-      }
-      currentSprint = await currentSprint.where('start_date','<=',moment().format('YYYY-MM-DD'))
-      .where('end_date','>=',moment().format('YYYY-MM-DD'))
-      .withGraphFetched('[squad_leader,okr.okr_task]')
+    const today = moment().format("YYYY-MM-DD");
+
+    // --- ownership by okr_mentee ---
+    const whereByMentee = (qb: any) => {
+      qb.whereExists(
+        ModelOkrMentee.query()
+          .select(1)
+          .join("okr", "okr.id", "okr_mentee.okr_id")
+          .where("okr_mentee.mentee_id", user.id)
+          .whereRaw("okr.sprint_id = sprint.id")
+      );
+    };
+
+    const baseGraph = (b: any) => {
+      b.whereNull("okr_task.deleted_at").orderBy("okr_task.id", "asc");
+    };
+
+    const currentSprint = await ModelSprint.query()
+      .select("sprint.*")
+      .from("sprint")
+      .where(whereByMentee)
+      .where("sprint.start_date", "<=", today)
+      .where("sprint.end_date", ">=", today)
       .whereNotDeleted()
-      .modifyGraph('okr.okr_task',builder => {
-        builder.whereNull('deleted_at');
-        builder.orderBy('id','asc');
-      });
-      if (!currentSprint) throw new HttpException(409, "Data doesn't exist");
+      .withGraphFetched("okr.[okr_task]") // eager load okr + tasks
+      .modifyGraph("okr.okr_task", baseGraph);
 
-    let historySprint:any = ModelSprint.query().select('*')
-      .from(ModelSprint.tableName)
-    if(user.squad_id != null){
-      historySprint = historySprint.where(builder => {
-        builder.where('squad_id',user.squad_id);
-        builder.orWhere('user_id',user.id)
-      })
-    }else{
-      historySprint = historySprint.where('user_id',user.id)
-    }
-    historySprint = await historySprint
-      .where('end_date','<',moment().format('YYYY-MM-DD'))
-      .withGraphFetched('[squad_leader,okr.okr_task]')
+    const historySprint = await ModelSprint.query()
+      .select("sprint.*")
+      .from("sprint")
+      .where(whereByMentee)
+      .where("sprint.end_date", "<", today)
       .whereNotDeleted()
-      .orderBy('id','desc')
-      .modifyGraph('okr.okr_task',builder => {
-        builder.whereNull('deleted_at');
-        builder.orderBy('id','asc');
-      });
-      if (!historySprint) throw new HttpException(409, "Data doesn't exist");
+      .orderBy("sprint.id", "desc")
+      .withGraphFetched("okr.[okr_task]")
+      .modifyGraph("okr.okr_task", baseGraph);
 
-    let upcomingSprint:any = ModelSprint.query().select('*')
-      .from(ModelSprint.tableName)
-      // .where('user_id','=',id)
-    if(user.squad_id != null){
-      upcomingSprint = upcomingSprint.where(builder => {
-        builder.where('squad_id',user.squad_id);
-        builder.orWhere('user_id',user.id)
-      })
-    }else{
-      upcomingSprint = upcomingSprint.where('user_id',user.id)
-    }
-      upcomingSprint = await upcomingSprint.where('start_date','>',moment().format('YYYY-MM-DD'))
-      // .where('end_date','<',moment().format('YYYY-MM-DD'))
-      .withGraphFetched('[squad_leader,okr.okr_task]')
+    const upcomingSprint = await ModelSprint.query()
+      .select("sprint.*")
+      .from("sprint")
+      .where(whereByMentee)
+      .where("sprint.start_date", ">", today)
       .whereNotDeleted()
-      .modifyGraph('okr.okr_task',builder => {
-        builder.whereNull('deleted_at');
-        builder.orderBy('id','asc');
-      });
-      if (!historySprint) throw new HttpException(409, "Data doesn't exist");
+      .withGraphFetched("okr.[okr_task]")
+      .modifyGraph("okr.okr_task", baseGraph);
 
-      return { currentSprint: currentSprint, historySprint: historySprint, upcomingSprint:upcomingSprint };
+    return {
+      currentSprint,
+      historySprint,
+      upcomingSprint,
+    };
   }
+
 
   public async getSprintActivity(id: any): Promise<any> {
     const activity:any = await ModelSprintActivity.query().where('sprint_id',id).withGraphFetched('[user]').orderBy('id','desc');
@@ -245,23 +234,52 @@ class OkrService {
   }
 
   public async createSprintKr(param: any): Promise<any> {
-    const sprint:any = await ModelSprint.query().where('id',param.sprint_id).first();
-    if (!sprint) throw new HttpException(409, "Data failed to input");
-    //input sprint
-    const paramSprint = {
-      output: param.output,
-      key_result: param.key_result,
-      description: param.description,
-      due_date: param.due_date,
-      user_id: param.user_id,
-      sprint_id: param.sprint_id
-    };
-    const createData: any = await ModelOkr.query()
-      .insert({ id: generateId(), ...paramSprint })
-      .into(ModelOkr.tableName);
+    const sprint = await ModelSprint.query().findById(param.sprint_id);
+    if (!sprint) throw new HttpException(404, "Sprint doesn't exist");
 
-    await this.createSprintLog(param.user_id,param.sprint_id,`membuat KR ${param.key_result} pada sprint`);
-    return createData;
+    const {
+      key_result,
+      output,
+      description,
+      due_date,
+      user_id,
+      sprint_id,
+      assigned_to = [] as string[],
+    } = param;
+
+    const result = await ModelOkr.transaction(async (trx: Transaction) => {
+      // --- create OKR ---
+      const payload: PartialModelObject<ModelOkr> = {
+        id: generateId(),
+        mentor_id: user_id,
+        key_result,
+        output,
+        description,
+        due_date,
+        sprint_id,
+      };
+
+      const okr = await ModelOkr.query(trx).insert(payload);
+
+      // assigne mentee
+      if (Array.isArray(assigned_to) && assigned_to.length > 0) {
+        const okrMentees: PartialModelObject<ModelOkrMentee>[] = assigned_to.map((menteeId) => {
+          return {
+            id: generateId(),
+            okr_id: okr.id,
+            mentee_id: menteeId,
+          }
+        })
+
+        await ModelOkrMentee.query(trx).insert(okrMentees);
+      }
+
+      await this.createSprintLog(user_id, sprint_id, `membuat KR ${key_result} pada sprint`);
+
+      return okr;
+    });
+
+    return result;
   }
 
   public async createSprint(param: any): Promise<any> {
@@ -296,11 +314,10 @@ class OkrService {
     //input sprint
     const paramSprint = {
       sprint: param.sprint || `SPRINT #${sprintNum}`,
+      mentor_id: param.user_id,
       objective: param.objective,
       start_date: param.start_date,
       end_date: param.end_date,
-      user_id: param.user_id,
-      user_internship_id: param.user_internship_id,
       project_id: param.project_id
     };
     const createData: any = await ModelSprint.query()
@@ -313,7 +330,6 @@ class OkrService {
   }
 
   public async createSprintLog(user_id:any,sprint_id:any,message:any){
-    console.log('create sprint log')
     const user:any = await ModelUser.query().where('id',user_id).first();
     if (!user) throw new HttpException(409, "Data failed to input");
 
