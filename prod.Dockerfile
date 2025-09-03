@@ -1,9 +1,7 @@
-FROM node:20
+FROM node:18-alpine3.16
 
-# RUN apk add --no-cache g++ make py3-pip
+RUN apk add --no-cache g++ make py3-pip
 
-RUN apt-get update && apt-get install -y g++ make python3 python3-pip \
-    && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm@7
 
 WORKDIR /app
@@ -13,15 +11,10 @@ COPY package*.json pnpm-lock.yaml tsconfig.json ./
 # pertama sync lockfile
 RUN pnpm install --no-frozen-lockfile
 # lalu pakai frozen supaya konsisten
-# RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
 RUN pnpm run build:tsc
 
-#CMD ["pnpm", "start:tsc"]
-#CMD ["node", "dist/server.js"]
-ENV NODE_ENV=production
-ENV PORT=3000
-
-CMD ["node", "dist/server.js"]
+CMD ["pnpm", "start:tsc"]

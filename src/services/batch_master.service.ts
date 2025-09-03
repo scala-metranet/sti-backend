@@ -3,6 +3,7 @@ import { isEmpty } from "@utils/util";
 import { generateId } from "@utils/util";
 import { ModelBatchMaster } from "@/models/batch_master.model";
 import { ModelCompany } from "@/models/company.model";
+import { ModelInternshipProgram } from "@/models/internship_program.model";
 
 class BatchMasterService {
   public async get(param:any): Promise<any> {
@@ -54,6 +55,14 @@ class BatchMasterService {
   public async create(param: any): Promise<any> {
     const company:any = await ModelCompany.query().select().from(ModelCompany.tableName).where("id", "=", param.company_id);
     if (!company) throw new HttpException(409, "Company doesn't exist");
+
+    const internship_program = await ModelInternshipProgram
+      .query()
+      .select()
+      .from(ModelInternshipProgram.tableName)
+      .where("id", "=", param.internship_program_id)
+      .first();
+    if (!internship_program) throw new HttpException(404, "Internship Program doesn't exist");
 
     const insert:any = await ModelBatchMaster.query().insert({
       id:generateId(),
