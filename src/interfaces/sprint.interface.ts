@@ -8,4 +8,11 @@ export interface Sprint {
   end_date: string;
   mentor_notes: string;
   mentor_lesson: string;
+  squad_leader?: User | null; // bukan string lagi
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email?: string;
 }
