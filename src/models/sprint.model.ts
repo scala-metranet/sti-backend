@@ -2,7 +2,6 @@ import { Model, ModelObject } from "objection";
 import { Sprint } from "@/interfaces/sprint.interface";
 import { ModelOkr } from "./okr.model";
 import objectionSoftDelete from "objection-js-soft-delete";
-import { ModelUser } from "./user.model";
 
 const softDelete = objectionSoftDelete({
   columnName: "deleted_at",
