@@ -716,20 +716,6 @@ class OkrService {
         .delete()
         .where("okr_id", id)
         .into(ModelOkrMentee.tableName);
-      // if (!deleteOkrMentee)
-      //   throw new HttpException(409, "Data failed to input");
-
-      // for (let index = 0; index < okr_mentee.length; index++) {
-      //   const element = okr_mentee[index];
-      //   const createData: any = await ModelOkrMentee.query()
-      //     .insert({
-      //       id: generateId(),
-      //       mentee_id: element.value,
-      //       okr_id: id,
-      //     })
-      //     .into(ModelOkrMentee.tableName);
-      //   if (!createData) throw new HttpException(409, "Data failed to input");
-      // }
 
       for (let index = 0; index < okr_mentee.length; index++) {
         const element = okr_mentee[index];
