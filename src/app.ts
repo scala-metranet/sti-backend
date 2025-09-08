@@ -11,6 +11,7 @@ import knex from "@databases";
 import { Routes } from "@interfaces/routes.interface";
 import errorMiddleware from "@middlewares/error.middleware";
 import { logger, stream } from "@utils/logger";
+import { join } from "path";
 
 //import { join } from "path";
 //import formidableMiddleware from "express-formidable-typescript";
@@ -45,6 +46,7 @@ class App {
       //   },
       //   this.app,
       // );
+      this.app.use("/public", express.static(join(process.cwd(), "public")));
       const server = this.app;
       server.listen(this.port, () => {
         logger.info("=================================");
@@ -93,7 +95,7 @@ class App {
   }
 
   private initializeRoutes(routes: Routes[]) {
-    routes.forEach(route => {
+    routes.forEach((route) => {
       this.app.use("/", route.router);
     });
   }
