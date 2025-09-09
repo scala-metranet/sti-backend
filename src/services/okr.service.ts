@@ -17,6 +17,7 @@ import { ModelUserInternship } from "@/models/user_internship.model";
 import { ModelUser } from "@/models/user.model";
 import { ModelSprintActivity } from "@/models/sprint_activity.model";
 import { PartialModelObject, Transaction } from "objection";
+import { log } from "console";
 
 class OkrService {
   public async findAll(): Promise<Squad[]> {
@@ -716,7 +717,14 @@ class OkrService {
         .delete()
         .where("okr_id", id)
         .into(ModelOkrMentee.tableName);
-
+      if (!deleteOkrMentee) {
+        console.log("Tidak ada data OKR mentee yang dihapus untuk okr_id:", id);
+        // bisa lanjut ke bawah tanpa throw
+      } else {
+        console.log(
+          `✅ Berhasil menghapus ${deleteOkrMentee} mentee untuk okr_id: ${id}`
+        );
+      }
       for (let index = 0; index < okr_mentee.length; index++) {
         const element = okr_mentee[index];
 
