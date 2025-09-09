@@ -10,6 +10,7 @@ import { ModelProject } from "@/models/project.model";
 import { ModelProjectMentor } from "@/models/project_mentor.model";
 
 class ProjectService {
+  // Get all projects for a specific company
   public async findAll(companyId: string): Promise<Project[]> {
     let data: any = await ModelProject.query()
       .select()
