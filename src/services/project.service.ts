@@ -1,18 +1,23 @@
 import { HttpException } from "@exceptions/HttpException";
 import { isEmpty } from "@utils/util";
 import { generateId } from "@utils/util";
-import { Project, CreateProjectDto, UpdateProjectDto } from "@/interfaces/project.interface";
+import {
+  Project,
+  CreateProjectDto,
+  UpdateProjectDto,
+} from "@/interfaces/project.interface";
 import { ModelProject } from "@/models/project.model";
 import { ModelProjectMentor } from "@/models/project_mentor.model";
 
 class ProjectService {
+  // Get all projects for a specific company
   public async findAll(companyId: string): Promise<Project[]> {
     let data: any = await ModelProject.query()
       .select()
       .from(ModelProject.tableName)
       .where("company_id", "=", companyId)
-      .withGraphFetched("[company, mentors]");
-    
+      .withGraphFetched("[company, mentors]")
+      .orderBy("created_at", "desc");
     return data;
   }
 
@@ -42,7 +47,7 @@ class ProjectService {
 
     // Assign mentors if provided
     if (param.mentor_ids && param.mentor_ids.length > 0) {
-      const mentorAssignments = param.mentor_ids.map(mentorId => ({
+      const mentorAssignments = param.mentor_ids.map((mentorId) => ({
         id: generateId(),
         project_id: projectId,
         mentor_id: mentorId,
@@ -56,7 +61,11 @@ class ProjectService {
     return this.findById(createData.id, param.company_id);
   }
 
-  public async update(id: string, param: UpdateProjectDto, companyId: string): Promise<Project> {
+  public async update(
+    id: string,
+    param: UpdateProjectDto,
+    companyId: string
+  ): Promise<Project> {
     if (isEmpty(param)) throw new HttpException(400, "param is empty");
 
     const data: Project = await ModelProject.query()
@@ -85,13 +94,11 @@ class ProjectService {
     // Handle mentor assignments if provided
     if (param.mentor_ids !== undefined) {
       // Remove existing mentor assignments
-      await ModelProjectMentor.query()
-        .delete()
-        .where("project_id", "=", id);
+      await ModelProjectMentor.query().delete().where("project_id", "=", id);
 
       // Add new mentor assignments
       if (param.mentor_ids.length > 0) {
-        const mentorAssignments = param.mentor_ids.map(mentorId => ({
+        const mentorAssignments = param.mentor_ids.map((mentorId) => ({
           id: generateId(),
           project_id: id,
           mentor_id: mentorId,
@@ -116,9 +123,7 @@ class ProjectService {
     if (!data) throw new HttpException(409, "Project doesn't exist");
 
     // Delete mentor assignments first (due to foreign key constraints)
-    await ModelProjectMentor.query()
-      .delete()
-      .where("project_id", "=", id);
+    await ModelProjectMentor.query().delete().where("project_id", "=", id);
 
     // Delete the project
     await ModelProject.query()
