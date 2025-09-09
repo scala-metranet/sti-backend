@@ -16,7 +16,7 @@ class ProjectService {
       .from(ModelProject.tableName)
       .where("company_id", "=", companyId)
       .withGraphFetched("[company, mentors]")
-      .orderBy("created_at", "desc");
+      .orderBy("created_at", "desc"); // Order by created_at descending
     return data;
   }
 
