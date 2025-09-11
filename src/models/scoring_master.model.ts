@@ -1,13 +1,12 @@
 import { Model, ModelObject } from "objection";
-import objectionSoftDelete from 'objection-js-soft-delete';
-
+import objectionSoftDelete from "objection-js-soft-delete";
 
 const softDelete = objectionSoftDelete({
-  columnName: 'deleted_at',
+  columnName: "deleted_at",
   deletedValue: new Date(),
   notDeletedValue: null,
 });
-export class ModelScoringMaster extends softDelete(Model){
+export class ModelScoringMaster extends softDelete(Model) {
   id!: string;
   name!: string;
   description!: string;
@@ -54,7 +53,7 @@ export class ModelScoringMaster extends softDelete(Model){
         from: "scoring_section.scoring_master_id",
         to: "scoring_master.id",
       },
-      filter: f => f.whereNotDeleted(),
+      filter: (f) => f.whereNotDeleted(),
     },
     question: {
       relation: Model.HasManyRelation,
@@ -63,10 +62,18 @@ export class ModelScoringMaster extends softDelete(Model){
         from: "scoring_question.scoring_master_id",
         to: "scoring_master.id",
       },
-      filter: f => f.whereNotDeleted(),
+      filter: (f) => f.whereNotDeleted(),
     },
-  }
+    scoring: {
+      relation: Model.HasManyRelation,
+      modelClass: __dirname + "/scoring.model",
+      join: {
+        from: "scoring.scoring_master_id",
+        to: "scoring_master.id",
+      },
+      filter: (f) => f.whereNotDeleted(),
+    },
+  };
 }
-
 
 export type ScoringMasterTokenShape = ModelObject<ModelScoringMaster>;
