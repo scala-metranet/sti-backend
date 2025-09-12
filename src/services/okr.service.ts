@@ -17,7 +17,6 @@ import { ModelUserInternship } from "@/models/user_internship.model";
 import { ModelUser } from "@/models/user.model";
 import { ModelSprintActivity } from "@/models/sprint_activity.model";
 import { PartialModelObject, Transaction } from "objection";
-import { log } from "console";
 
 class OkrService {
   public async findAll(): Promise<Squad[]> {
