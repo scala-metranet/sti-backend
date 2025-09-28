@@ -266,7 +266,7 @@ pipeline {
                 }
             }
         }
-
+    }
         post {
             success {
                 script {
@@ -283,7 +283,7 @@ pipeline {
             }
         }
     }
-}
+
 def sendDiscord(String message, int color) {
     def payload = [
         username: "Jenkins",
@@ -308,4 +308,5 @@ def sendDiscord(String message, int color) {
         """
     }
 }
+
 
