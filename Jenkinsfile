@@ -266,36 +266,46 @@ pipeline {
                 }
             }
         }
-
-        stage('Send Notification to Discord') {
-            steps {
-                withCredentials([string(credentialsId: 'discord-webhook', variable: 'DISCORD_WEBHOOK')]) {
-                    script {
-                        def payload = [
-                            username: "Jenkins",
-                            embeds: [[
-                                title: "✅ Deployment STI BE --- ${env.BRANCH_NAME} Success",
-                                description: "Done update STI BE --- ${env.BRANCH_NAME} ke ${env.NEW_VERSION}",
-                                fields: [
-                                    [name: "Repository", value: "${env.GIT_REPOSITORY}", inline: true],
-                                    [name: "Ref", value: "${env.GIT_REF}", inline: true],
-                                    [name: "Event", value: "${env.EVENT}", inline: true],
-                                    [name: "Commit", value: "${env.COMMIT_SHA} ${env.COMMIT_MESSAGE}", inline: true],
-                                    [name: "Triggered by", value: "${env.TRIGGERED_BY}", inline: true],
-                                    [name: "Workflow", value: "${env.WORKFLOW_FILE}", inline: true],
-                                    [name: "Date", value: "${env.DATE}", inline: true]
-                                ],
-                                color: 65280
-                            ]]
-                        ]
-                        sh """#!/bin/bash
-                            curl -X POST -H "Content-Type: application/json" \
-                            -d '${groovy.json.JsonOutput.toJson(payload)}' \
-                            "$DISCORD_WEBHOOK"
-                        """
-                    }
+    }
+        post {
+            success {
+                script {
+                    sendDiscord("✅ Deployment STI BE --- ${env.BRANCH_NAME} Success", 65280)
                 }
+            }
+            failure {
+                script {
+                    sendDiscord("❌ Deployment STI BE --- ${env.BRANCH_NAME} Failed", 16711680)
+                }
+            }
+            always {
+                echo "📢 Pipeline selesai dengan status: ${currentBuild.currentResult}"
             }
         }
     }
+
+def sendDiscord(String message, int color) {
+    def payload = [
+        username: "Jenkins",
+        embeds: [[
+            title: message,
+            description: "Pipeline status: ${message}",
+            fields: [
+                [name: "Repository", value: "${env.GIT_REPOSITORY}", inline: true],
+                [name: "Ref", value: "${env.GIT_REF}", inline: true],
+                [name: "Commit", value: "${env.COMMIT_SHA} ${env.COMMIT_MESSAGE}", inline: true],
+                [name: "Triggered by", value: "${env.TRIGGERED_BY}", inline: true],
+                [name: "Date", value: "${env.DATE}", inline: true]
+            ],
+            color: color
+        ]]
+    ]
+    withCredentials([string(credentialsId: 'discord-webhook', variable: 'DISCORD_WEBHOOK')]) {
+        sh """#!/bin/bash
+            curl -s -X POST -H "Content-Type: application/json" \
+            -d '${groovy.json.JsonOutput.toJson(payload)}' \
+            "$DISCORD_WEBHOOK"
+        """
+    }
 }
+
