@@ -4,7 +4,8 @@ import { User } from "@interfaces/users.interface";
 import AuthService from "@services/auth.service";
 import { randomBytes } from "crypto";
 import TokenService from "@/services/token.service";
-import SupabaseProvider from "@/utils/supabase";
+
+import UploadHelper from "@/utils/uploadHelper";
 // import { redisClient } from "@/utils/redis";
 import axios from "axios";
 import { CF_SECRET_KEY } from "@/config";
@@ -12,9 +13,13 @@ class AuthController {
   public authService = new AuthService();
   public tokenService = new TokenService();
 
-  public register = async (req: Request, res: Response, next: NextFunction): Promise<void | Response<unknown, Record<string, unknown>>> => {
+  public register = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void | Response<unknown, Record<string, unknown>>> => {
     try {
-      const supabase = new SupabaseProvider();
+      let storage = new UploadHelper();
       const errors: unknown[] = [];
       let photo: any = null;
       console.log(req);
@@ -23,7 +28,11 @@ class AuthController {
         for (const [key, value] of files) {
           const filepath = value.path;
           const contentType: string = value.mimetype;
-          const { data, error }: any = await supabase.upload(key, filepath, contentType);
+          const { data, error }: any = await storage.upload(
+            key,
+            filepath,
+            contentType
+          );
           if (error) errors.push(error);
           else photo = data.publicUrl;
         }
@@ -35,15 +44,21 @@ class AuthController {
       }
 
       const signUpUserData: User = await this.authService.register(userData);
-      res.status(201).json({ data: signUpUserData, message: "Register successful." });
+      res
+        .status(201)
+        .json({ data: signUpUserData, message: "Register successful." });
     } catch (error) {
       next(error);
     }
   };
 
-  public verification = async (req: Request, res: Response, next: NextFunction): Promise<void | Response<unknown, Record<string, unknown>>> => {
+  public verification = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void | Response<unknown, Record<string, unknown>>> => {
     try {
-      const supabase = new SupabaseProvider();
+      let storage = new UploadHelper();
       const errors: unknown[] = [];
       const attachment: any = {};
       console.log(req);
@@ -52,7 +67,11 @@ class AuthController {
         for (const [key, value] of files) {
           const filepath = value.path;
           const contentType: string = value.mimetype;
-          const { data, error }: any = await supabase.upload(key, filepath, contentType);
+          const { data, error }: any = await storage.upload(
+            key,
+            filepath,
+            contentType
+          );
           if (error) errors.push(error);
           else attachment[value.fieldname] = data.publicUrl;
         }
@@ -60,14 +79,21 @@ class AuthController {
       }
 
       const userData: any = req.body;
-      const data: User = await this.authService.verification(userData, attachment);
+      const data: User = await this.authService.verification(
+        userData,
+        attachment
+      );
       res.status(201).json({ data, message: "Verification successful." });
     } catch (error) {
       next(error);
     }
   };
 
-  public resendOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public resendOtp = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const data: any = await this.authService.resendOtp(req["user"]);
       res.status(200).json({ data, message: "Forget Password successful." });
@@ -76,7 +102,11 @@ class AuthController {
     }
   };
 
-  public sendOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public sendOtp = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const data: any = await this.authService.sendOtp(req.body);
       res.status(200).json({ data, message: "Send OTP successful." });
@@ -85,18 +115,29 @@ class AuthController {
     }
   };
 
-  public verifOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public verifOtp = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const param: any = req.body;
 
-      const data: any = await this.authService.verifOtp({ ...param, ...req["user"] });
+      const data: any = await this.authService.verifOtp({
+        ...param,
+        ...req["user"],
+      });
       res.status(200).json({ data, message: "Forget Password successful." });
     } catch (error) {
       next(error);
     }
   };
 
-  public forgetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public forgetPassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userData: any = req.body;
 
@@ -107,7 +148,11 @@ class AuthController {
     }
   };
 
-  public updatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public updatePassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userData: any = req.body;
 
@@ -118,7 +163,11 @@ class AuthController {
     }
   };
 
-  public checkForgetToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public checkForgetToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const data = await this.authService.checkForgetToken(req.body);
       res.status(200).json({ data, message: "Token valid." });
@@ -131,21 +180,35 @@ class AuthController {
     res.status(200).json("ok");
   };
 
-  public siteVerify = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public siteVerify = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const param: any = req.body;
-      const url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-      const result = await axios.post(url,{response:param.token,secret:CF_SECRET_KEY})
-      console.log('result',result.data)
-      res.status(200).json({ response: result.data, message: "Verify successful." });
+      const url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+      const result = await axios.post(url, {
+        response: param.token,
+        secret: CF_SECRET_KEY,
+      });
+      console.log("result", result.data);
+      res
+        .status(200)
+        .json({ response: result.data, message: "Verify successful." });
     } catch (error) {
       next(error);
     }
   };
 
-  public logIn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public logIn = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || null;
+      const ip =
+        req.headers["x-forwarded-for"] || req.socket.remoteAddress || null;
       const userData: any = req.body;
 
       const data = await this.authService.login({ ...userData, ip: ip });
@@ -157,9 +220,14 @@ class AuthController {
     }
   };
 
-  public impersonate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public impersonate = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || null;
+      const ip =
+        req.headers["x-forwarded-for"] || req.socket.remoteAddress || null;
       const userData: any = { ...req.body, user_id: req["user"].id };
 
       const data = await this.authService.impersonate({ ...userData, ip: ip });
@@ -169,7 +237,11 @@ class AuthController {
     }
   };
 
-  public logOut = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+  public logOut = async (
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userData: User = req.user;
       await this.authService.logout(userData);
@@ -178,7 +250,11 @@ class AuthController {
       next(error);
     }
   };
-  public refreshToken = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+  public refreshToken = async (
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userData: User = req.user;
       // rome-ignore lint/performance/noDelete: <explanation>
@@ -188,7 +264,11 @@ class AuthController {
 
       await this.tokenService.removeByUserId(userData.id);
       await this.tokenService.saveToken(userData.id, accessKey, refreshKey);
-      const tokens = this.tokenService.generateTokens(userData, accessKey, refreshKey);
+      const tokens = this.tokenService.generateTokens(
+        userData,
+        accessKey,
+        refreshKey
+      );
 
       res.status(200).json({ message: "Success refresh token.", data: tokens });
     } catch (error) {

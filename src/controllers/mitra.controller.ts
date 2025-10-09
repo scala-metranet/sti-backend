@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import { Company } from "@/interfaces/company.interface";
-import SupabaseProvider from "@/utils/supabase";
 import MitraService from "@/services/mitra.service";
 import UploadHelper from "@/utils/uploadHelper";
 
@@ -124,7 +123,7 @@ class MitraController {
     next: NextFunction
   ): Promise<void | Response<unknown, Record<string, unknown>>> => {
     try {
-      let supabase = new SupabaseProvider();
+      let storage = new UploadHelper();
       let errors: unknown[] = [];
       let attachment: any = {};
       if (req.files != undefined && req.files != null) {
@@ -132,7 +131,7 @@ class MitraController {
         for (let [key, value] of files) {
           const filepath = value.path;
           const contentType: string = value.mimetype;
-          const { data, error }: any = await supabase.upload(
+          const { data, error }: any = await storage.upload(
             key,
             filepath,
             contentType
@@ -158,7 +157,7 @@ class MitraController {
     next: NextFunction
   ): Promise<void | Response<unknown, Record<string, unknown>>> => {
     try {
-      let supabase = new SupabaseProvider();
+      let storage = new UploadHelper();
       let errors: unknown[] = [];
       let attachment: any = {};
       if (req.files != undefined && req.files != null) {
@@ -166,7 +165,7 @@ class MitraController {
         for (let [key, value] of files) {
           const filepath = value.path;
           const contentType: string = value.mimetype;
-          const { data, error }: any = await supabase.upload(
+          const { data, error }: any = await storage.upload(
             key,
             filepath,
             contentType
@@ -192,7 +191,7 @@ class MitraController {
     next: NextFunction
   ): Promise<void | Response<unknown, Record<string, unknown>>> => {
     try {
-      let supabase = new SupabaseProvider();
+      let storage = new UploadHelper();
       let errors: unknown[] = [];
       let attachment: any = {};
       if (req.files != undefined && req.files != null) {
@@ -200,7 +199,7 @@ class MitraController {
         for (let [key, value] of files) {
           const filepath = value.path;
           const contentType: string = value.mimetype;
-          const { data, error }: any = await supabase.upload(
+          const { data, error }: any = await storage.upload(
             key,
             filepath,
             contentType
